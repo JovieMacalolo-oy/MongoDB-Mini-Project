@@ -1,0 +1,74 @@
+:root {
+  --bg-color: #f4f6f1;
+  --text-dark: #3a4741;
+  --text-muted: #85918c;
+  --accent-green: #589c72;
+  --accent-gold: #fcc15a;
+  --accent-red: #d16e61;
+  --card-bg: #dde6e0;
+  --panel-bg: #fff;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+}
+
+/* Level Bar Styling */
+.level-system-container {
+  transition: all 0.3s ease;
+}
+
+.level-progress-bar {
+  background-color: #e2e8e3;
+  border-radius: 999px;
+  height: 12px;
+  overflow: hidden;
+}
+
+.level-progress-fill {
+  background-color: var(--accent-green);
+  height: 100%;
+  transition: width 0.5s ease-out;
+}
+
+/* Stats Cards */
+.stat-card {
+  background-color: var(--card-bg);
+  border: 1px solid rgba(133, 145, 140, 0.1);
+}
+
+/* Tab Styling */
+.tab-btn {
+  color: var(--text-muted);
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.tab-btn.active {
+  color: var(--accent-green);
+  border-bottom: 3px solid var(--accent-green);
+}
+
+/* Task Cards matching your Image */
+.task-card {
+  background-color: #fff;
+  border: 1px solid #e1e9e3;
+  border-radius: 1.5rem;
+}
+
+.action-btn {
+  border-radius: 0.75rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  transition: transform 0.2s;
+}
+
+.action-btn:hover { transform: translateY(-2px); }
+.btn-edit { background: var(--bg-color); color: var(--text-muted); }
+.btn-done { background: var(--accent-green); color: white; }
+.btn-delete { background: #fdf2f1; color: var(--accent-red); }
+
+.hidden { display: none !important; }
