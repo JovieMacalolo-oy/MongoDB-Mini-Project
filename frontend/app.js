@@ -4,6 +4,12 @@ let currentActiveTab = 'sidequest';
 document.addEventListener('DOMContentLoaded', () => {
     fetchData();
     document.getElementById('taskForm').addEventListener('submit', handleFormSubmit);
+
+    // New: Listen for search typing (with a small delay/debounce is usually better, but this is direct)
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => handleSearch(e.target.value));
+    }
 });
 
 // --- UI Logic ---
@@ -58,16 +64,20 @@ function updateDashboardUI(stats) {
     const val2 = document.getElementById('completedCount');
     const list = document.getElementById('category-list');
 
+    // BULLETPROOF HELPER: Finds status regardless of capitalization (e.g., "TO DO", "To Do", "to do")
+const getCount = (statusName) => {
+    if (!stats.statusOverview) return 0;
+    const found = stats.statusOverview.find(s => 
+        s._id && s._id.toLowerCase().trim() === statusName.toLowerCase().trim()
+    );
+    return found ? found.total : 0;
+};
+
     if (currentActiveTab === 'sidequest') {
-        // Alignment Fix: Use the same 'statusOverview' logic as the other tabs
-        const doneStats = stats.statusOverview?.find(s => s._id === 'Done');
-        
         val1.innerText = stats.totalXP || 0;
-        val2.innerText = doneStats ? doneStats.total : 0; // Benchmarked to match Academics
-        
+        val2.innerText = getCount('Done'); 
         updateLevelSystem(stats.totalXP || 0);
 
-        // Benchmarked Category Split
         if (stats.avgPoints && stats.avgPoints.length > 0) {
             list.innerHTML = stats.avgPoints.map(s => `
                 <div class="flex justify-between items-center py-1">
@@ -80,13 +90,26 @@ function updateDashboardUI(stats) {
         }
 
     } else if (currentActiveTab === 'academic') {
-        val1.innerText = stats.statusOverview?.find(s => s._id === 'To Do')?.total || 0;
-        val2.innerText = stats.statusOverview?.find(s => s._id === 'Done')?.total || 0;
-        list.innerHTML = stats.subjectDist?.map(s => `<div class="flex justify-between"><span>${s._id}:</span><b>${s.count}</b></div>`).join('') || '';
+        // This will now correctly match "TO DO" from your database
+            val1.innerText = getCount('To Do'); // This will now catch "TO DO"
+            val2.innerText = getCount('Done');
+        
+        list.innerHTML = stats.subjectDist?.map(s => `
+            <div class="flex justify-between">
+                <span>${s._id}:</span>
+                <b>${s.count}</b>
+            </div>
+        `).join('') || '';
+
     } else {
         val1.innerText = stats.activeOrgs || 0;
-        val2.innerText = stats.statusOverview?.find(s => s._id === 'Done')?.total || 0;
-        list.innerHTML = stats.orgStats?.map(s => `<div class="flex justify-between"><span>${s._id}:</span><b>${s.count}</b></div>`).join('') || '';
+        val2.innerText = getCount('Done');
+        list.innerHTML = stats.orgStats?.map(s => `
+            <div class="flex justify-between">
+                <span>${s._id}:</span>
+                <b>${s.count}</b>
+            </div>
+        `).join('') || '';
     }
 }
 
@@ -236,4 +259,45 @@ function editItem(item) {
         }
         document.getElementById('extraNote').value = item.notes || "";
     }
+}
+
+// --- Live Search Function ---
+async function handleSearch(query) {
+    // If the search bar is cleared, just fetch the normal list
+    if (!query || query.trim() === "") {
+        fetchData();
+        return;
+    }
+
+    try {
+        const endpoint = currentActiveTab === 'extra' ? 'extracurriculars' : `${currentActiveTab}s`;
+        
+        // We call the search endpoint with the current letters typed
+        const response = await fetch(`${API_BASE}/${endpoint}/search?query=${encodeURIComponent(query)}`);
+        const filteredData = await response.json();
+
+        // Re-render the cards with only the matching results
+        renderCards(filteredData);
+    } catch (err) {
+        console.error("Search error:", err);
+    }
+}
+
+// Add this to your DOMContentLoaded listener so it knows to listen to the input
+document.addEventListener('DOMContentLoaded', () => {
+    fetchData();
+    document.getElementById('taskForm').addEventListener('submit', handleFormSubmit);
+
+    // New: Listen for typing in the search bar
+    const searchBar = document.getElementById('searchInput');
+    if (searchBar) {
+        searchBar.addEventListener('input', (e) => handleSearch(e.target.value));
+    }
+});
+
+// --- Backup Logic ---
+function downloadBackup() {
+    const endpoint = currentActiveTab === 'extra' ? 'extracurriculars' : `${currentActiveTab}s`;
+    // Simply redirecting the window to the backup URL triggers the browser download
+    window.location.href = `${API_BASE}/${endpoint}/backup`;
 }

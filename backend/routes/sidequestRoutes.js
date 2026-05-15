@@ -2,12 +2,16 @@ const express = require('express');
 const router = express.Router();
 const sidequestController = require('../controllers/sidequestController');
 
-// Stats must come BEFORE /:id routes to avoid being treated as an ID
+// 1. Static & Special Routes (Always first)
 router.get('/stats', sidequestController.getSidequestStats);
+router.get('/search', sidequestController.searchSidequests); // New Search Route
+router.get('/backup', sidequestController.backupSidequests); // New Backup Route
 
-// Changed from getAllSidequests to getSidequests to match controller
+// 2. Standard Fetch & Create
 router.get('/', sidequestController.getSidequests); 
 router.post('/', sidequestController.createSidequest);
+
+// 3. Parameterized Routes (Always last)
 router.put('/:id', sidequestController.updateSidequest);
 router.delete('/:id', sidequestController.deleteSidequest);
 

@@ -1,7 +1,7 @@
 const Sidequest = require('../models/Sidequest');
 
 // GET all sidequests
-exports.getSidequests = async (req, res) => {
+const getSidequests = async (req, res) => {
     try {
         const sidequests = await Sidequest.find().sort({ createdAt: -1 });
         res.json(sidequests);
@@ -11,7 +11,7 @@ exports.getSidequests = async (req, res) => {
 };
 
 // GET stats (Benchmarked to match Academic/Extra)
-exports.getSidequestStats = async (req, res) => {
+const getSidequestStats = async (req, res) => {
     try {
         const totalXP = await Sidequest.aggregate([
             { $match: { status: 'Done' } },
@@ -38,7 +38,7 @@ exports.getSidequestStats = async (req, res) => {
 };
 
 // POST a new sidequest
-exports.createSidequest = async (req, res) => {
+const createSidequest = async (req, res) => {
     try {
         const { title, category, difficulty } = req.body;
         const diffNum = parseInt(difficulty) || 1;
@@ -59,7 +59,7 @@ exports.createSidequest = async (req, res) => {
 };
 
 // PUT (Update)
-exports.updateSidequest = async (req, res) => {
+const updateSidequest = async (req, res) => {
     try {
         if (req.body.difficulty) {
             req.body.points = parseInt(req.body.difficulty) * 10;
@@ -72,11 +72,50 @@ exports.updateSidequest = async (req, res) => {
 };
 
 // DELETE
-exports.deleteSidequest = async (req, res) => {
+const deleteSidequest = async (req, res) => {
     try {
         await Sidequest.findByIdAndDelete(req.params.id);
         res.json({ message: "Deleted successfully" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
+};
+
+const searchSidequests = async (req, res) => {
+    try {
+        const { query } = req.query;
+        const tasks = await Sidequest.find({
+            $or: [
+                { title: { $regex: query, $options: 'i' } },    // Matches title
+                { category: { $regex: query, $options: 'i' } }  // Matches category
+            ]
+        }).sort({ createdAt: -1 });
+        res.json(tasks);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// 7. Backup Sidequest tasks (JSON Download)
+const backupSidequests = async (req, res) => {
+    try {
+        const tasks = await Sidequest.find();
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=sidequests_backup.json');
+
+        res.send(JSON.stringify(tasks, null, 2));
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = {
+    getSidequests,    // Added the 's' to match the function name
+    getSidequestStats,
+    createSidequest,
+    updateSidequest,
+    deleteSidequest,
+    searchSidequests,
+    backupSidequests
 };

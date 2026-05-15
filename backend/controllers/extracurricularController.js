@@ -82,10 +82,45 @@ const getExtraStats = async (req, res) => {
     }
 };
 
+// 6. Search Extracurricular tasks (Live Search)
+const searchExtras = async (req, res) => {
+    try {
+        const { query } = req.query; // This captures the letters typed in the search bar
+        
+        const tasks = await Extra.find({
+            $or: [
+                { organization: { $regex: query, $options: 'i' } }, // Matches Org name
+                { taskName: { $regex: query, $options: 'i' } },     // Matches Task name
+                { notes: { $regex: query, $options: 'i' } }         // Matches Notes
+            ]
+        }).sort({ createdAt: -1 });
+        
+        res.json(tasks);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// 7. Backup Extracurricular tasks (JSON Download)
+const backupExtras = async (req, res) => {
+    try {
+        const tasks = await Extra.find();
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=extracurricular_backup.json');
+        
+        res.send(JSON.stringify(tasks, null, 2));
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getAllExtras,
     createExtra,
     updateExtra,
     deleteExtra,
-    getExtraStats
+    getExtraStats,
+    searchExtras,
+    backupExtras
 };

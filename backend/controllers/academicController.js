@@ -55,11 +55,15 @@ const getAcademicStats = async (req, res) => {
         const stats = await Academic.aggregate([
             {
                 $facet: {
-                    // Counts how many are 'To Do' vs 'Done'
+                    // REMOVED THE $match FILTER: Now it looks at ALL tasks
                     "statusOverview": [
-                        { $match: { status: "Done" } }, // ADD THIS LINE: It filters the count
-                        { $group: { _id: "$status", total: { $sum: 1 } } }
-                    ],
+                       { 
+                    $group: { 
+                    _id: "$status", 
+                    total: { $sum: 1 } 
+                            } 
+                }
+                        ],
                     // Breakdown by Subject
                     "subjectDist": [
                         { $group: { _id: "$subject", count: { $sum: 1 } } }
@@ -73,10 +77,42 @@ const getAcademicStats = async (req, res) => {
     }
 };
 
+const searchAcademics = async (req, res) => {
+    try {
+        const { query } = req.query;
+        const tasks = await Academic.find({
+            $or: [
+                { subject: { $regex: query, $options: 'i' } },   // Matches subject
+                { notes: { $regex: query, $options: 'i' } }     // Matches notes
+            ]
+        }).sort({ createdAt: -1 });
+        res.json(tasks);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// 7. Backup Academic tasks (JSON Download)
+const backupAcademics = async (req, res) => {
+    try {
+        const tasks = await Academic.find();
+        
+        // We set the headers to tell the browser this is a file download
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename=academic_backup.json');
+        
+        res.send(JSON.stringify(tasks, null, 2));
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getAllAcademics,
     createAcademic,
     updateAcademic,
     deleteAcademic,
-    getAcademicStats
+    getAcademicStats,
+    searchAcademics, // Exported
+    backupAcademics  // Exported
 };
